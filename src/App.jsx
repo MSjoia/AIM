@@ -857,7 +857,7 @@ YOUR ROLE:
           <div className="fade-in" style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: 28, width: 420, maxWidth: "95vw" }}>
             <div className="condensed" style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>AI API Key</div>
             <p style={{ fontSize: 13, color: T.muted, marginBottom: 16, lineHeight: 1.6 }}>
-              Get a free API key at <span style={{ color: T.blue }}>---contact admin---</span>. Free credits are sufficient for demos and student projects. The key is stored only in your browser.
+              Get an API key at <span style={{ color: T.blue }}>---contact admin---</span>. Credits should be sufficient for demos and student projects. The key is stored only in your browser.
             </p>
             <input
               type="password" value={apiKeyInput} onChange={e => setApiKeyInput(e.target.value)}
