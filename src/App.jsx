@@ -318,7 +318,7 @@ export default function App() {
   const [apiKey,       setApiKey]       = useState("");
   const [apiKeyInput,  setApiKeyInput]  = useState("");
   const [showKeyModal, setShowKeyModal] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("qwen/qwen3-235b-a22b:free");
+  const [selectedModel, setSelectedModel] = useState("openrouter/free");
   const [filterStatus, setFilterStatus] = useState("all");
   const [onlyCritical, setOnlyCritical] = useState(false);
   const [searchTerm,   setSearchTerm]   = useState("");
@@ -868,9 +868,9 @@ YOUR ROLE:
             <div className="condensed" style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>⚙ Settings</div>
             <div style={{ width: 40, height: 2, background: T.orange, marginBottom: 16 }} />
 
-            <div style={{ fontSize: 12, color: T.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 6 }}> API Key</div>
+            <div style={{ fontSize: 12, color: T.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 6 }}>OpenRouter API Key</div>
             <p style={{ fontSize: 13, color: T.muted, marginBottom: 10, lineHeight: 1.6 }}>
-              Get a free key from <span style={{ color: T.blue }}>admin</span>. While in early stages, it's free to use. Key is stored in your browser only.
+              Get a free key from <span style={{ color: T.blue }}>admin</span>. It's free to use. Key is stored in your browser only.
             </p>
             <input
               type="password" value={apiKeyInput} onChange={e => setApiKeyInput(e.target.value)}
@@ -888,23 +888,26 @@ YOUR ROLE:
               color: T.text, padding: "10px 14px", borderRadius: 6, fontSize: 13,
               outline: "none", cursor: "pointer", marginBottom: 6,
             }}>
-              <optgroup label="🆓 Free Models">
-                <option value="qwen/qwen3-235b-a22b:free">Qwen3 235B (Free) ⭐ Recommended</option>
-                <option value="qwen/qwen3-30b-a3b:free">Qwen3 30B (Free)</option>
-                <option value="meta-llama/llama-4-maverick:free">Llama 4 Maverick (Free)</option>
-                <option value="meta-llama/llama-4-scout:free">Llama 4 Scout (Free)</option>
-                <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (Free)</option>
-                <option value="google/gemma-3-27b-it:free">Gemma 3 27B (Free)</option>
-                <option value="deepseek/deepseek-r1:free">DeepSeek R1 (Free)</option>
+              <optgroup label="🆓 Free (Auto)">
+                <option value="openrouter/free">Auto — Best Available Free Model ⭐ Recommended</option>
               </optgroup>
-              <optgroup label="💳 Paid (better quality)">
+              <optgroup label="🆓 Free (Specific Models)">
+                <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free)</option>
+                <option value="meta-llama/llama-4-scout:free">Llama 4 Scout (Free)</option>
+                <option value="meta-llama/llama-4-maverick:free">Llama 4 Maverick (Free)</option>
+                <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash Exp (Free)</option>
+                <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (Free)</option>
+                <option value="deepseek/deepseek-r1:free">DeepSeek R1 (Free)</option>
+                <option value="allenai/olmo-3.1-32b-think:free">OLMo 3.1 32B (Free)</option>
+              </optgroup>
+              <optgroup label="💳 Paid (higher quality)">
                 <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
                 <option value="anthropic/claude-3-5-haiku">Claude 3.5 Haiku</option>
                 <option value="google/gemini-flash-1.5">Gemini Flash 1.5</option>
               </optgroup>
             </select>
             <div style={{ fontSize: 11, color: T.muted, marginBottom: 16 }}>
-              Free models have rate limits but work well for demos. Check openrouter.ai for current free models.
+              💡 <strong style={{color: T.yellow}}>Tip:</strong> Use "Auto" to never hit availability errors — OpenRouter picks the best free model automatically. 20 req/min · 200 req/day limit on free models.
             </div>
 
             <div style={{ display: "flex", gap: 10 }}>
