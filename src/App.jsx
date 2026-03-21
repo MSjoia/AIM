@@ -318,6 +318,7 @@ export default function App() {
   const [apiKey,       setApiKey]       = useState("");
   const [apiKeyInput,  setApiKeyInput]  = useState("");
   const [showKeyModal, setShowKeyModal] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("qwen/qwen3-235b-a22b:free");
   const [filterStatus, setFilterStatus] = useState("all");
   const [onlyCritical, setOnlyCritical] = useState(false);
   const [searchTerm,   setSearchTerm]   = useState("");
@@ -332,6 +333,8 @@ export default function App() {
       try {
         const k = await window.storage.get("apiKey");
         if (k) setApiKey(k.value);
+        const m = await window.storage.get("selectedModel");
+        if (m) setSelectedModel(m.value);
         const p = await window.storage.get("projectData");
         if (p) {
           const d = JSON.parse(p.value);
@@ -380,7 +383,10 @@ export default function App() {
   /* API key */
   const saveApiKey = async () => {
     setApiKey(apiKeyInput);
-    try { await window.storage.set("apiKey", apiKeyInput); } catch(e) {}
+    try {
+      await window.storage.set("apiKey", apiKeyInput);
+      await window.storage.set("selectedModel", selectedModel);
+    } catch(e) {}
     setShowKeyModal(false);
   };
 
@@ -431,18 +437,7 @@ ${top}
     }
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: `You are an expert AI Construction Project Manager for the Al Rawdah Road Project. You have access to real Primavera P6 schedule data.
+      const systemPrompt = `You are an expert AI Construction Project Manager for the Al Rawdah Road Project. You have access to real Primavera P6 schedule data.
 
 COMPUTED PROJECT DATA:
 ${buildContext()}
@@ -454,12 +449,27 @@ YOUR ROLE:
 - For "SPI/CPI": explain if cost data is unavailable and what data would enable it
 - For "optimize": suggest which activities have float that could be redistributed
 - Keep responses concise, structured, and actionable
-- You are REPLACING a PM — be confident and directive, not vague`,
-          messages: history.map(m => ({ role: m.role, content: m.content })),
+- You are REPLACING a PM — be confident and directive, not vague`;
+
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+          "HTTP-Referer": window.location.href,
+          "X-Title": "AI Project Manager",
+        },
+        body: JSON.stringify({
+          model: selectedModel,
+          max_tokens: 1000,
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...history.map(m => ({ role: m.role, content: m.content })),
+          ],
         }),
       });
       const data = await res.json();
-      const reply = data.content?.[0]?.text || "No response received.";
+      const reply = data.choices?.[0]?.message?.content || data.error?.message || "No response received.";
       setMessages(prev => [...prev, { role: "assistant", content: reply }]);
     } catch(e) {
       setMessages(prev => [...prev, { role: "assistant", content: `⚠️ API Error: ${e.message}\n\nCheck your API key in Settings.` }]);
@@ -854,32 +864,61 @@ YOUR ROLE:
           position: "fixed", inset: 0, background: "#00000080",
           display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999
         }} onClick={e => e.target === e.currentTarget && setShowKeyModal(false)}>
-          <div className="fade-in" style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: 28, width: 420, maxWidth: "95vw" }}>
-            <div className="condensed" style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>AI API Key</div>
-            <p style={{ fontSize: 13, color: T.muted, marginBottom: 16, lineHeight: 1.6 }}>
-              Get an API key at <span style={{ color: T.blue }}>---contact admin---</span>. Credits should be sufficient for demos and student projects. The key is stored only in your browser.
+          <div className="fade-in" style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: 28, width: 460, maxWidth: "95vw" }}>
+            <div className="condensed" style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>⚙ Settings</div>
+            <div style={{ width: 40, height: 2, background: T.orange, marginBottom: 16 }} />
+
+            <div style={{ fontSize: 12, color: T.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 6 }}> API Key</div>
+            <p style={{ fontSize: 13, color: T.muted, marginBottom: 10, lineHeight: 1.6 }}>
+              Get a free key from <span style={{ color: T.blue }}>admin</span>. While in early stages, it's free to use. Key is stored in your browser only.
             </p>
             <input
               type="password" value={apiKeyInput} onChange={e => setApiKeyInput(e.target.value)}
-              placeholder="sk-ant-..."
+              placeholder="sk-or-v1-..."
               onKeyDown={e => e.key === "Enter" && saveApiKey()}
               style={{ width: "100%", background: T.card, border: `1px solid ${T.border}`,
-                color: T.text, padding: "10px 14px", borderRadius: 6, fontSize: 14, outline: "none",
-                marginBottom: 14, fontFamily: "'JetBrains Mono',monospace"
+                color: T.text, padding: "10px 14px", borderRadius: 6, fontSize: 13, outline: "none",
+                marginBottom: 16, fontFamily: "'JetBrains Mono',monospace"
               }}
             />
+
+            <div style={{ fontSize: 12, color: T.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 6 }}>AI Model</div>
+            <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)} style={{
+              width: "100%", background: T.card, border: `1px solid ${T.border}`,
+              color: T.text, padding: "10px 14px", borderRadius: 6, fontSize: 13,
+              outline: "none", cursor: "pointer", marginBottom: 6,
+            }}>
+              <optgroup label="🆓 Free Models">
+                <option value="qwen/qwen3-235b-a22b:free">Qwen3 235B (Free) ⭐ Recommended</option>
+                <option value="qwen/qwen3-30b-a3b:free">Qwen3 30B (Free)</option>
+                <option value="meta-llama/llama-4-maverick:free">Llama 4 Maverick (Free)</option>
+                <option value="meta-llama/llama-4-scout:free">Llama 4 Scout (Free)</option>
+                <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (Free)</option>
+                <option value="google/gemma-3-27b-it:free">Gemma 3 27B (Free)</option>
+                <option value="deepseek/deepseek-r1:free">DeepSeek R1 (Free)</option>
+              </optgroup>
+              <optgroup label="💳 Paid (better quality)">
+                <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+                <option value="anthropic/claude-3-5-haiku">Claude 3.5 Haiku</option>
+                <option value="google/gemini-flash-1.5">Gemini Flash 1.5</option>
+              </optgroup>
+            </select>
+            <div style={{ fontSize: 11, color: T.muted, marginBottom: 16 }}>
+              Free models have rate limits but work well for demos. Check openrouter.ai for current free models.
+            </div>
+
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={saveApiKey} style={{
                 background: T.orange, border: "none", color: "#000",
                 padding: "10px 20px", borderRadius: 6, cursor: "pointer",
                 fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 14, flex: 1
-              }}>Save Key</button>
+              }}>Save Settings</button>
               <button onClick={() => setShowKeyModal(false)} style={{
                 background: T.card, border: `1px solid ${T.border}`, color: T.muted,
                 padding: "10px 20px", borderRadius: 6, cursor: "pointer", fontSize: 14
               }}>Cancel</button>
             </div>
-            {apiKey && <div style={{ marginTop: 10, fontSize: 12, color: T.green }}>✓ Key is currently set</div>}
+            {apiKey && <div style={{ marginTop: 10, fontSize: 12, color: T.green }}>✓ API key is set · Model: {selectedModel.split("/")[1]}</div>}
           </div>
         </div>
       )}
